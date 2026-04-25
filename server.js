@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const path = require("path");
 const fs = require("fs");
+const requestIp = require("request-ip"); // ✅ NEW
 
 const app = express();
 app.use(cors());
@@ -13,7 +14,7 @@ let students = JSON.parse(fs.readFileSync("students.json"));
 // Store sessions
 let activeSessions = {};
 
-// 🔥 Store demo users (temporary)
+// 🔥 Store demo users
 let demoUsers = {};
 
 const EXPIRY_DAYS = 365;
@@ -32,10 +33,11 @@ function isExpired(registeredOn) {
 
 // === POST /login ===
 app.post("/login", (req, res) => {
-  const { email } = req.body;
+  const { email, deviceId } = req.body; // ✅ NEW
   if (!email) return res.status(400).json({ error: "Email is required" });
 
   const normalizedEmail = email.toLowerCase();
+  const clientIp = requestIp.getClientIp(req); // ✅ NEW
 
   // 🔍 Check registered student
   const student = students.find(
@@ -54,14 +56,17 @@ app.post("/login", (req, res) => {
     return res.json({ token });
   }
 
-  // 🔥 DEMO USER (NEW FEATURE)
+  // 🔥 DEMO USER (IP + DEVICE LIMIT)
   const now = Date.now();
 
-  if (!demoUsers[normalizedEmail]) {
-    demoUsers[normalizedEmail] = now; // first login
+  // UNIQUE KEY
+  const demoKey = normalizedEmail + "_" + clientIp + "_" + deviceId;
+
+  if (!demoUsers[demoKey]) {
+    demoUsers[demoKey] = now;
   }
 
-  const firstLogin = demoUsers[normalizedEmail];
+  const firstLogin = demoUsers[demoKey];
   const diffHours = (now - firstLogin) / (1000 * 60 * 60);
 
   if (diffHours > DEMO_HOURS) {
@@ -77,10 +82,11 @@ app.post("/login", (req, res) => {
 
 // === POST /validate ===
 app.post("/validate", (req, res) => {
-  const { email, token } = req.body;
+  const { email, token, deviceId } = req.body; // ✅ NEW
   if (!email || !token) return res.json({ valid: false });
 
   const normalizedEmail = email.toLowerCase();
+  const clientIp = requestIp.getClientIp(req); // ✅ NEW
 
   const student = students.find(
     s => s.email.toLowerCase() === normalizedEmail
@@ -97,8 +103,10 @@ app.post("/validate", (req, res) => {
     });
   }
 
-  // 🔥 DEMO USER
-  const firstLogin = demoUsers[normalizedEmail];
+  // 🔥 DEMO USER CHECK
+  const demoKey = normalizedEmail + "_" + clientIp + "_" + deviceId;
+
+  const firstLogin = demoUsers[demoKey];
 
   if (!firstLogin) return res.json({ valid: false });
 
