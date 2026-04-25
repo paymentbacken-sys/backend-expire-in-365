@@ -2,7 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const path = require("path");
 const fs = require("fs");
-const requestIp = require("request-ip"); // ✅ NEW
+const requestIp = require("request-ip");
 
 const app = express();
 app.use(cors());
@@ -14,7 +14,7 @@ let students = JSON.parse(fs.readFileSync("students.json"));
 // Store sessions
 let activeSessions = {};
 
-// 🔥 Store demo users
+// 🔥 Store demo users (temporary memory)
 let demoUsers = {};
 
 const EXPIRY_DAYS = 365;
@@ -31,20 +31,25 @@ function isExpired(registeredOn) {
   return diffDays > EXPIRY_DAYS;
 }
 
-// === POST /login ===
+// =======================
+// ✅ LOGIN API
+// =======================
 app.post("/login", (req, res) => {
-  const { email, deviceId } = req.body; // ✅ NEW
+  const { email, deviceId } = req.body;
+
   if (!email) return res.status(400).json({ error: "Email is required" });
 
   const normalizedEmail = email.toLowerCase();
-  const clientIp = requestIp.getClientIp(req); // ✅ NEW
+  const clientIp = requestIp.getClientIp(req);
 
   // 🔍 Check registered student
   const student = students.find(
     s => s.email.toLowerCase() === normalizedEmail
   );
 
+  // =======================
   // ✅ REGISTERED USER
+  // =======================
   if (student) {
     if (isExpired(student.registeredOn)) {
       return res.json({ expired: true });
@@ -56,23 +61,36 @@ app.post("/login", (req, res) => {
     return res.json({ token });
   }
 
-  // 🔥 DEMO USER (IP + DEVICE LIMIT)
+  // =======================
+  // 🔥 DEMO USER LOGIC
+  // =======================
+  const demoKey = normalizedEmail + "_" + clientIp + "_" + deviceId;
   const now = Date.now();
 
-  // UNIQUE KEY
-  const demoKey = normalizedEmail + "_" + clientIp + "_" + deviceId;
-
+  // First time
   if (!demoUsers[demoKey]) {
-    demoUsers[demoKey] = now;
+    demoUsers[demoKey] = {
+      firstLogin: now,
+      expired: false
+    };
   }
 
-  const firstLogin = demoUsers[demoKey];
-const diffMinutes = (now - firstLogin) / (1000 * 60);
+  const demo = demoUsers[demoKey];
 
-if (diffMinutes > DEMO_MINUTES) {
-  return res.json({ demoExpired: true });
-}
+  // 🚫 Already expired → block forever
+  if (demo.expired) {
+    return res.json({ demoExpired: true });
+  }
 
+  const diffMinutes = (now - demo.firstLogin) / (1000 * 60);
+
+  // ⏳ Expire after time → mark permanently
+  if (diffMinutes > DEMO_MINUTES) {
+    demo.expired = true;
+    return res.json({ demoExpired: true });
+  }
+
+  // ✅ Allow demo login
   const token = Math.random().toString(36).substring(2);
   activeSessions[normalizedEmail] = token;
 
@@ -80,19 +98,24 @@ if (diffMinutes > DEMO_MINUTES) {
 });
 
 
-// === POST /validate ===
+// =======================
+// ✅ VALIDATE API
+// =======================
 app.post("/validate", (req, res) => {
-  const { email, token, deviceId } = req.body; // ✅ NEW
+  const { email, token, deviceId } = req.body;
+
   if (!email || !token) return res.json({ valid: false });
 
   const normalizedEmail = email.toLowerCase();
-  const clientIp = requestIp.getClientIp(req); // ✅ NEW
+  const clientIp = requestIp.getClientIp(req);
 
   const student = students.find(
     s => s.email.toLowerCase() === normalizedEmail
   );
 
+  // =======================
   // ✅ REGISTERED USER
+  // =======================
   if (student) {
     if (isExpired(student.registeredOn)) {
       return res.json({ valid: false, expired: true });
@@ -103,33 +126,49 @@ app.post("/validate", (req, res) => {
     });
   }
 
-  // 🔥 DEMO USER CHECK
+  // =======================
+  // 🔥 DEMO USER VALIDATION
+  // =======================
   const demoKey = normalizedEmail + "_" + clientIp + "_" + deviceId;
+  const demo = demoUsers[demoKey];
 
-  const firstLogin = demoUsers[demoKey];
+  if (!demo) return res.json({ valid: false });
 
-  if (!firstLogin) return res.json({ valid: false });
+  // 🚫 Already expired
+  if (demo.expired) {
+    return res.json({ valid: false, demoExpired: true });
+  }
 
   const now = Date.now();
-const diffMinutes = (now - firstLogin) / (1000 * 60);
+  const diffMinutes = (now - demo.firstLogin) / (1000 * 60);
 
-if (diffMinutes > DEMO_MINUTES) {
-  return res.json({ valid: false, demoExpired: true });
-}
+  // ⏳ Expire and block permanently
+  if (diffMinutes > DEMO_MINUTES) {
+    demo.expired = true;
+    return res.json({ valid: false, demoExpired: true });
+  }
 
   return res.json({
     valid: activeSessions[normalizedEmail] === token
   });
 });
 
-// Serve frontend
+
+// =======================
+// 🌐 FRONTEND
+// =======================
 app.use(express.static(path.join(__dirname, "Public")));
 
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "Public", "index.html"));
 });
 
+
+// =======================
+// 🚀 START SERVER
+// =======================
 const PORT = process.env.PORT || 3000;
+
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
