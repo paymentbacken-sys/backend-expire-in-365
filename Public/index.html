@@ -191,7 +191,7 @@ async function login() {
   // Validation
   if (!email || !email.includes("@")) {
     errorBox.innerHTML = `
-      Your E-Mail ID is not registered.<br><br>
+      Your E-mail ID not found. Click ‘Register’ to generate your login access code (looks like an e-mail).<br><br>
       <a href="https://gten-educational-platform.github.io/Class-12/email.html" target="_blank" class="register-btn">
         Register Now
       </a>
@@ -249,7 +249,7 @@ if (data.token) {
 
 // 🔥 CASE 3 : unregistered email
 errorBox.innerHTML = `
-  Your E-Mail ID is not registered.<br><br>
+  Your E-mail ID not found. Click ‘Register’ to generate your login access code (looks like an e-mail).<br><br>
   <a href="https://gten-educational-platform.github.io/Class-12/email.html" target="_blank" class="register-btn">
     Register Now
   </a>
