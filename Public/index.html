@@ -217,15 +217,16 @@ async function login() {
 
 
 // 🔥 CASE 1 : expired account
-if (data.expired === true) {
-  errorBox.innerHTML = `
-    Your access has expired.<br>
-Please register again to renew access.<br><br>
-    <a href="https://gten-educational-platform.github.io/Class-12/email.html" target="_blank" class="register-btn">
-      Renew Access
-    </a>
-  `;
-  return;
+if (data.expiringSoon) {
+  const d = new Date(data.expiryDate);
+  const formattedDate =
+    String(d.getDate()).padStart(2,'0') + "/" +
+    String(d.getMonth()+1).padStart(2,'0') + "/" +
+    d.getFullYear();
+
+  setTimeout(() => {
+    alert(`⚠️ Your access will expire on ${formattedDate}. Please register again to renew access.`);
+  }, 800);
 }
 
 // 🔥 CASE 2 : valid login
@@ -334,17 +335,17 @@ window.onload = async function() {
   }
 
   // ✅ ONLY allow if valid
-if (data.valid) {
-  document.getElementById("loginContainer").style.display = "none";
-  document.getElementById("appContainer").style.display = "block";
-  document.getElementById("viewer").src = SINGLE_LINK;
+if (data.expiringSoon) {
+  const d = new Date(data.expiryDate);
+  const formattedDate =
+    String(d.getDate()).padStart(2,'0') + "/" +
+    String(d.getMonth()+1).padStart(2,'0') + "/" +
+    d.getFullYear();
 
-  // 🔔 expiry tomorrow popup
-  if (data.expiringSoon) {
-    setTimeout(() => {
-      alert("⚠️ Your access will expire tomorrow. Please register again to renew access.");
-    }, 800);
-  }
+  setTimeout(() => {
+    alert(`⚠️ Your access will expire on ${formattedDate}. Please register again to renew access.`);
+  }, 800);
+}
 
 } else {
   localStorage.clear();
