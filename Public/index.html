@@ -186,6 +186,12 @@ const SINGLE_LINK =
 
 async function login() {
   const email = document.getElementById("emailInput").value.trim().toLowerCase();
+	let deviceId = localStorage.getItem("deviceId");
+
+if (!deviceId) {
+  deviceId = Math.random().toString(36).substring(2);
+  localStorage.setItem("deviceId", deviceId);
+}
   const errorBox = document.getElementById("loginError");
 
   // Validation
@@ -203,7 +209,7 @@ async function login() {
     const res = await fetch(`${BACKEND_URL}/login`, {
       method: "POST",
       headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({ email })
+      body: JSON.stringify({ email, deviceId })
     });
 
     const data = await res.json();
@@ -276,13 +282,14 @@ document.getElementById("emailInput").addEventListener("input", function() {
 window.onload = async function() {
   const email = localStorage.getItem("studentEmail");
   const token = localStorage.getItem("sessionToken");
+	const deviceId = localStorage.getItem("deviceId");
 
   if (!email || !token) return;
 
   const res = await fetch(`${BACKEND_URL}/validate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, token })
+    body: JSON.stringify({ email, token, deviceId })
   });
 
   const data = await res.json();
@@ -324,16 +331,23 @@ if (data.demoExpired) {
 setInterval(async () => {
   const email = localStorage.getItem("studentEmail");
   const token = localStorage.getItem("sessionToken");
+	const deviceId = localStorage.getItem("deviceId");
 
   if (!email || !token) return;
 
   const res = await fetch(`${BACKEND_URL}/validate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, token })
+    body: JSON.stringify({ email, token, deviceId })
   });
 
   const data = await res.json();
+	if (data.demoExpired) {
+  alert("Your demo period has ended. Please register.");
+  localStorage.clear();
+  location.reload();
+  return;
+}
 
   // 🔥 HANDLE EXPIRY FIRST
   if (data.expired) {
