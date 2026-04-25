@@ -18,7 +18,7 @@ let activeSessions = {};
 let demoUsers = {};
 
 const EXPIRY_DAYS = 365;
-const DEMO_HOURS = 24;
+const DEMO_MINUTES = 5;
 
 // 🔹 Check 365-day expiry
 function isExpired(registeredOn) {
@@ -67,11 +67,11 @@ app.post("/login", (req, res) => {
   }
 
   const firstLogin = demoUsers[demoKey];
-  const diffHours = (now - firstLogin) / (1000 * 60 * 60);
+const diffMinutes = (now - firstLogin) / (1000 * 60);
 
-  if (diffHours > DEMO_HOURS) {
-    return res.json({ demoExpired: true });
-  }
+if (diffMinutes > DEMO_MINUTES) {
+  return res.json({ demoExpired: true });
+}
 
   const token = Math.random().toString(36).substring(2);
   activeSessions[normalizedEmail] = token;
@@ -111,11 +111,11 @@ app.post("/validate", (req, res) => {
   if (!firstLogin) return res.json({ valid: false });
 
   const now = Date.now();
-  const diffHours = (now - firstLogin) / (1000 * 60 * 60);
+const diffMinutes = (now - firstLogin) / (1000 * 60);
 
-  if (diffHours > DEMO_HOURS) {
-    return res.json({ valid: false, demoExpired: true });
-  }
+if (diffMinutes > DEMO_MINUTES) {
+  return res.json({ valid: false, demoExpired: true });
+}
 
   return res.json({
     valid: activeSessions[normalizedEmail] === token
