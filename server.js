@@ -7,15 +7,19 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// 🔥 Load students with registration date
+// 🔥 Load students
 let students = JSON.parse(fs.readFileSync("students.json"));
 
-// Store active sessions
+// Store sessions
 let activeSessions = {};
 
-const EXPIRY_DAYS = 365;
+// 🔥 Store demo users (temporary)
+let demoUsers = {};
 
-// 🔹 Function to check expiry
+const EXPIRY_DAYS = 365;
+const DEMO_HOURS = 24;
+
+// 🔹 Check 365-day expiry
 function isExpired(registeredOn) {
   const regDate = new Date(registeredOn);
   const today = new Date();
@@ -33,26 +37,41 @@ app.post("/login", (req, res) => {
 
   const normalizedEmail = email.toLowerCase();
 
-  // 🔍 Find student
+  // 🔍 Check registered student
   const student = students.find(
     s => s.email.toLowerCase() === normalizedEmail
   );
 
-  if (!student) {
-    return res.status(401).json({ error: "Email not allowed" });
+  // ✅ REGISTERED USER
+  if (student) {
+    if (isExpired(student.registeredOn)) {
+      return res.json({ expired: true });
+    }
+
+    const token = Math.random().toString(36).substring(2);
+    activeSessions[normalizedEmail] = token;
+
+    return res.json({ token });
   }
 
-  // 🔥 CHECK EXPIRY
-  if (isExpired(student.registeredOn)) {
-    return res.json({ expired: true });
+  // 🔥 DEMO USER (NEW FEATURE)
+  const now = Date.now();
+
+  if (!demoUsers[normalizedEmail]) {
+    demoUsers[normalizedEmail] = now; // first login
   }
 
-  // Generate token
+  const firstLogin = demoUsers[normalizedEmail];
+  const diffHours = (now - firstLogin) / (1000 * 60 * 60);
+
+  if (diffHours > DEMO_HOURS) {
+    return res.json({ demoExpired: true });
+  }
+
   const token = Math.random().toString(36).substring(2);
   activeSessions[normalizedEmail] = token;
 
-  console.log(`✅ Login: ${normalizedEmail}`);
-  res.json({ token });
+  return res.json({ token, demo: true });
 });
 
 
@@ -67,16 +86,32 @@ app.post("/validate", (req, res) => {
     s => s.email.toLowerCase() === normalizedEmail
   );
 
-  if (!student) return res.json({ valid: false });
+  // ✅ REGISTERED USER
+  if (student) {
+    if (isExpired(student.registeredOn)) {
+      return res.json({ valid: false, expired: true });
+    }
 
-  // 🔥 CHECK EXPIRY AGAIN (VERY IMPORTANT)
-  if (isExpired(student.registeredOn)) {
-    return res.json({ valid: false, expired: true });
+    return res.json({
+      valid: activeSessions[normalizedEmail] === token
+    });
   }
 
-  const valid = activeSessions[normalizedEmail] === token;
+  // 🔥 DEMO USER
+  const firstLogin = demoUsers[normalizedEmail];
 
-  res.json({ valid });
+  if (!firstLogin) return res.json({ valid: false });
+
+  const now = Date.now();
+  const diffHours = (now - firstLogin) / (1000 * 60 * 60);
+
+  if (diffHours > DEMO_HOURS) {
+    return res.json({ valid: false, demoExpired: true });
+  }
+
+  return res.json({
+    valid: activeSessions[normalizedEmail] === token
+  });
 });
 
 // Serve frontend
