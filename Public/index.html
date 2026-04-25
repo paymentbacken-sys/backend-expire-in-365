@@ -186,12 +186,6 @@ const SINGLE_LINK =
 
 async function login() {
   const email = document.getElementById("emailInput").value.trim().toLowerCase();
-	let deviceId = localStorage.getItem("deviceId");
-
-if (!deviceId) {
-  deviceId = Math.random().toString(36).substring(2);
-  localStorage.setItem("deviceId", deviceId);
-}
   const errorBox = document.getElementById("loginError");
 
   // Validation
@@ -209,25 +203,31 @@ if (!deviceId) {
     const res = await fetch(`${BACKEND_URL}/login`, {
       method: "POST",
       headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({ email, deviceId })
+      body: JSON.stringify({ email })
     });
 
     const data = await res.json();
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // 🔥 ADD THIS BLOCK HERE
-
-// 🔥 DEMO EXPIRED (ONLY THIS ONE)
-if (data.demoExpired) {
-  errorBox.innerHTML = `
-    Your demo has expired (24 hours completed).<br><br>
-    <a href="https://gten-educational-platform.github.io/Class-12/email.html" target="_blank" class="register-btn">
-      Get Full Access
-    </a>
-  `;
-  return;
-}
-
-// 🔥 PAID EXPIRED
 if (data.expired) {
   errorBox.innerHTML = `
     Your access has expired (365 days completed).<br><br>
@@ -237,6 +237,26 @@ if (data.expired) {
   `;
   return;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     if (data.token) {
       localStorage.setItem("studentEmail", email);
       localStorage.setItem("sessionToken", data.token);
@@ -278,31 +298,35 @@ document.getElementById("emailInput").addEventListener("input", function() {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 // ✅ ADD HERE (RIGHT AFTER LOGIN FUNCTION)
 window.onload = async function() {
   const email = localStorage.getItem("studentEmail");
   const token = localStorage.getItem("sessionToken");
-	const deviceId = localStorage.getItem("deviceId");
 
   if (!email || !token) return;
 
   const res = await fetch(`${BACKEND_URL}/validate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, token, deviceId })
+    body: JSON.stringify({ email, token })
   });
 
   const data = await res.json();
 
   // 🔥 Handle expiry first
-	// 🔥 DEMO EXPIRED
-if (data.demoExpired) {
-  alert("Your demo period has ended. Please register.");
-  localStorage.clear();
-  location.reload();
-  return;
-}
-
   if (data.expired) {
     alert("Your access has expired. Please renew.");
     localStorage.clear();
@@ -325,29 +349,40 @@ if (data.demoExpired) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     // ------------------------------
     // AUTO-LOGOUT IF ANOTHER DEVICE LOGS IN
     // ------------------------------
 setInterval(async () => {
   const email = localStorage.getItem("studentEmail");
   const token = localStorage.getItem("sessionToken");
-	const deviceId = localStorage.getItem("deviceId");
 
   if (!email || !token) return;
 
   const res = await fetch(`${BACKEND_URL}/validate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, token, deviceId })
+    body: JSON.stringify({ email, token })
   });
 
   const data = await res.json();
-	if (data.demoExpired) {
-  alert("Your demo period has ended. Please register.");
-  localStorage.clear();
-  location.reload();
-  return;
-}
 
   // 🔥 HANDLE EXPIRY FIRST
   if (data.expired) {
