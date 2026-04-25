@@ -301,26 +301,35 @@ window.onload = async function() {
     // ------------------------------
     // AUTO-LOGOUT IF ANOTHER DEVICE LOGS IN
     // ------------------------------
-    setInterval(async () => {
-      const email = localStorage.getItem("studentEmail");
-      const token = localStorage.getItem("sessionToken");
+setInterval(async () => {
+  const email = localStorage.getItem("studentEmail");
+  const token = localStorage.getItem("sessionToken");
 
-      if (!email || !token) return;
+  if (!email || !token) return;
 
-      const res = await fetch(`${BACKEND_URL}/validate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, token })
-      });
+  const res = await fetch(`${BACKEND_URL}/validate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, token })
+  });
 
-      const data = await res.json();
+  const data = await res.json();
 
-      if (!data.valid) {
-        alert("⚠️ You have been logged out because this account was opened on another device.");
-        localStorage.clear();
-        location.reload();
-      }
-    }, 5000);
+  // 🔥 HANDLE EXPIRY FIRST
+  if (data.expired) {
+    alert("Your access has expired. Please renew.");
+    localStorage.clear();
+    location.reload();
+    return;
+  }
+
+  // 🔐 HANDLE OTHER DEVICE LOGIN
+  if (!data.valid) {
+    alert("⚠️ You have been logged out because this account was opened on another device.");
+    localStorage.clear();
+    location.reload();
+  }
+}, 5000);
   </script>
 
 </body>
