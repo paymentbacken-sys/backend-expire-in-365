@@ -334,13 +334,21 @@ window.onload = async function() {
   }
 
   // ✅ ONLY allow if valid
-  if (data.valid) {
-    document.getElementById("loginContainer").style.display = "none";
-    document.getElementById("appContainer").style.display = "block";
-    document.getElementById("viewer").src = SINGLE_LINK;
-  } else {
-    localStorage.clear();
+if (data.valid) {
+  document.getElementById("loginContainer").style.display = "none";
+  document.getElementById("appContainer").style.display = "block";
+  document.getElementById("viewer").src = SINGLE_LINK;
+
+  // 🔔 expiry tomorrow popup
+  if (data.expiringSoon) {
+    setTimeout(() => {
+      alert("⚠️ Your access will expire tomorrow. Please register again to renew access.");
+    }, 800);
   }
+
+} else {
+  localStorage.clear();
+}
 };
 
 
