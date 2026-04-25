@@ -209,6 +209,19 @@ async function login() {
     const data = await res.json();
 
 // 🔥 ADD THIS BLOCK HERE
+
+// 🔥 DEMO EXPIRED (ONLY THIS ONE)
+if (data.demoExpired) {
+  errorBox.innerHTML = `
+    Your demo has expired (24 hours completed).<br><br>
+    <a href="https://gten-educational-platform.github.io/Class-12/email.html" target="_blank" class="register-btn">
+      Get Full Access
+    </a>
+  `;
+  return;
+}
+
+// 🔥 PAID EXPIRED
 if (data.expired) {
   errorBox.innerHTML = `
     Your access has expired (365 days completed).<br><br>
@@ -218,7 +231,6 @@ if (data.expired) {
   `;
   return;
 }
-
     if (data.token) {
       localStorage.setItem("studentEmail", email);
       localStorage.setItem("sessionToken", data.token);
@@ -276,6 +288,14 @@ window.onload = async function() {
   const data = await res.json();
 
   // 🔥 Handle expiry first
+	// 🔥 DEMO EXPIRED
+if (data.demoExpired) {
+  alert("Your demo period has ended. Please register.");
+  localStorage.clear();
+  location.reload();
+  return;
+}
+
   if (data.expired) {
     alert("Your access has expired. Please renew.");
     localStorage.clear();
