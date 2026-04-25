@@ -164,23 +164,26 @@
     <iframe id="viewer"></iframe>
   </div>
 
-  <script>
-  const BACKEND_URL = "https://backend-expire-in-365.onrender.com";
+ <script>
+const BACKEND_URL = "https://backend-expire-in-365.onrender.com";
 
 const SINGLE_LINK =
 "https://smiitjeephysics-glitch.github.io/SM-IIT-JEE-PHYSICS-store-and-theory/HTML theory/SM 12 physics-2026.html";
 
 
 
+function showExpiryPopup(expiryDateString){
+  const d = new Date(expiryDateString);
 
+  const formattedDate =
+    String(d.getDate()).padStart(2,'0') + "/" +
+    String(d.getMonth()+1).padStart(2,'0') + "/" +
+    d.getFullYear();
 
-
-
-
-
-
-
-
+  setTimeout(() => {
+    alert(`⚠️ Your access will expire on ${formattedDate}. Please register again to renew access.`);
+  }, 800);
+}
 
 
 
@@ -188,7 +191,6 @@ async function login() {
   const email = document.getElementById("emailInput").value.trim().toLowerCase();
   const errorBox = document.getElementById("loginError");
 
-  // Validation
   if (!email || !email.includes("@")) {
     errorBox.innerHTML = `
       Your E-mail ID not found. Click ‘Register’ to generate your login access code (looks like an e-mail).<br><br>
@@ -208,111 +210,56 @@ async function login() {
 
     const data = await res.json();
 
+    // expired account
+    if (data.expired === true) {
+      errorBox.innerHTML = `
+        Your access has expired.<br>
+        Please register again to renew access.<br><br>
+        <a href="https://gten-educational-platform.github.io/Class-12/email.html" target="_blank" class="register-btn">
+          Renew Access
+        </a>
+      `;
+      return;
+    }
 
+    // valid login
+    if (data.token) {
+      localStorage.setItem("studentEmail", email);
+      localStorage.setItem("sessionToken", data.token);
 
+      document.getElementById("loginContainer").style.display = "none";
+      document.getElementById("appContainer").style.display = "block";
+      document.getElementById("viewer").src = SINGLE_LINK;
 
+      if (data.expiringSoon) {
+        showExpiryPopup(data.expiryDate);
+      }
 
+      return;
+    }
 
-
-
-
-// 🔥 CASE 1 : expired account
-if (data.expiringSoon) {
-  const d = new Date(data.expiryDate);
-  const formattedDate =
-    String(d.getDate()).padStart(2,'0') + "/" +
-    String(d.getMonth()+1).padStart(2,'0') + "/" +
-    d.getFullYear();
-
-  setTimeout(() => {
-    alert(`⚠️ Your access will expire on ${formattedDate}. Please register again to renew access.`);
-  }, 800);
-}
-
-// 🔥 CASE 2 : valid login
-if (data.token) {
-  localStorage.setItem("studentEmail", email);
-  localStorage.setItem("sessionToken", data.token);
-
-  document.getElementById("loginContainer").style.display = "none";
-  document.getElementById("appContainer").style.display = "block";
-  document.getElementById("viewer").src = SINGLE_LINK;
-
-  // 🔔 expiry tomorrow popup
-  if (data.expiringSoon) {
-    setTimeout(() => {
-      alert("⚠️ Your access will expire tomorrow. Please register again to renew access.");
-    }, 800);
-  }
-
-  return;
-}
-
-// 🔥 CASE 3 : unregistered email
-errorBox.innerHTML = `
-  Your E-mail ID not found. Click ‘Register’ to generate your login access code (looks like an e-mail).<br><br>
-  <a href="https://gten-educational-platform.github.io/Class-12/email.html" target="_blank" class="register-btn">
-    Register Now
-  </a>
-`;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
+    // not registered
+    errorBox.innerHTML = `
+      Your E-mail ID not found. Click ‘Register’ to generate your login access code (looks like an e-mail).<br><br>
+      <a href="https://gten-educational-platform.github.io/Class-12/email.html" target="_blank" class="register-btn">
+        Register Now
+      </a>
+    `;
 
   } catch (err) {
     errorBox.innerText = "Server error. Try later.";
   }
-} // ✅ VERY IMPORTANT — THIS WAS MISSING
+}
 
 
 document.getElementById("emailInput").addEventListener("input", function() {
-  const errorBox = document.getElementById("loginError");
-  errorBox.innerHTML = ""; // 🔥 clears error + hides Register button
+  document.getElementById("loginError").innerHTML = "";
 });
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// ✅ ADD HERE (RIGHT AFTER LOGIN FUNCTION)
+// auto session restore
 window.onload = async function() {
   const email = localStorage.getItem("studentEmail");
   const token = localStorage.getItem("sessionToken");
@@ -327,58 +274,30 @@ window.onload = async function() {
 
   const data = await res.json();
 
-  // 🔥 Handle expiry first
   if (data.expired) {
     alert("Your access has expired. Please renew.");
     localStorage.clear();
     return;
   }
 
-  // ✅ ONLY allow if valid
-if (data.expiringSoon) {
-  const d = new Date(data.expiryDate);
-  const formattedDate =
-    String(d.getDate()).padStart(2,'0') + "/" +
-    String(d.getMonth()+1).padStart(2,'0') + "/" +
-    d.getFullYear();
+  if (data.valid) {
+    document.getElementById("loginContainer").style.display = "none";
+    document.getElementById("appContainer").style.display = "block";
+    document.getElementById("viewer").src = SINGLE_LINK;
 
-  setTimeout(() => {
-    alert(`⚠️ Your access will expire on ${formattedDate}. Please register again to renew access.`);
-  }, 800);
-}
+    if (data.expiringSoon) {
+      showExpiryPopup(data.expiryDate);
+    }
 
-} else {
-  localStorage.clear();
-}
+  } else {
+    localStorage.clear();
+  }
 };
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    // ------------------------------
-    // AUTO-LOGOUT IF ANOTHER DEVICE LOGS IN
-    // ------------------------------
+// auto logout if another device logs in
 setInterval(async () => {
   const email = localStorage.getItem("studentEmail");
   const token = localStorage.getItem("sessionToken");
@@ -393,7 +312,6 @@ setInterval(async () => {
 
   const data = await res.json();
 
-  // 🔥 HANDLE EXPIRY FIRST
   if (data.expired) {
     alert("Your access has expired. Please renew.");
     localStorage.clear();
@@ -401,14 +319,13 @@ setInterval(async () => {
     return;
   }
 
-  // 🔐 HANDLE OTHER DEVICE LOGIN
   if (!data.valid) {
     alert("⚠️ You have been logged out because this account was opened on another device.");
     localStorage.clear();
     location.reload();
   }
 }, 5000);
-  </script>
+</script>
 
 </body>
 </html>
