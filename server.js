@@ -7,29 +7,30 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// 🔥 Load students with expiry date
+// Load students
 let students = JSON.parse(fs.readFileSync("students.json"));
 
-// Store active sessions
+// Active sessions
 let activeSessions = {};
 
 
-// 🔹 Function to check expiry
-function isExpiringSoon(expiresOn) {
+// ===============================
+// CHECK IF EXPIRED
+// ===============================
+function isExpired(expiresOn) {
   const expiryDate = new Date(expiresOn);
   const today = new Date();
 
-  expiryDate.setHours(23,59,59,999);
+  expiryDate.setHours(23, 59, 59, 999);
 
-  const diffTime = expiryDate - today;
-  const diffDays = diffTime / (1000*60*60*24);
-
-  return diffDays <= 3 && diffDays >= 0;
+  return today > expiryDate;
 }
 
 
-// 🔹 Function to check if only 1 day left
-function isExpiringSoon(expiresOn) {
+// ===============================
+// CHECK IF EXPIRING WITHIN 3 DAYS
+// ===============================
+function getExpiringData(expiresOn) {
   const expiryDate = new Date(expiresOn);
   const today = new Date();
 
@@ -38,14 +39,30 @@ function isExpiringSoon(expiresOn) {
   const diffTime = expiryDate - today;
   const diffDays = diffTime / (1000 * 60 * 60 * 24);
 
-  return diffDays <= 1 && diffDays > 0;
+  if (diffDays <= 3 && diffDays >= 0) {
+    return {
+      expiringSoon: true,
+      expiryDate: expiresOn
+    };
+  }
+
+  return {
+    expiringSoon: false,
+    expiryDate: expiresOn
+  };
 }
 
 
-// === POST /login ===
+
+// ===============================
+// LOGIN ROUTE
+// ===============================
 app.post("/login", (req, res) => {
   const { email } = req.body;
-  if (!email) return res.status(400).json({ error: "Email is required" });
+
+  if (!email) {
+    return res.status(400).json({ error: "Email is required" });
+  }
 
   const normalizedEmail = email.toLowerCase();
 
@@ -57,29 +74,38 @@ app.post("/login", (req, res) => {
     return res.status(401).json({ error: "Email not allowed" });
   }
 
-  // 🔥 Expired check
+  // Expired?
   if (isExpired(student.expiresOn)) {
     return res.json({ expired: true });
   }
 
-  const expiringSoon = isExpiringSoon(student.expiresOn);
+  // Expiring data
+  const expiryInfo = getExpiringData(student.expiresOn);
 
   // Generate token
   const token = Math.random().toString(36).substring(2);
   activeSessions[normalizedEmail] = token;
 
   console.log(`✅ Login: ${normalizedEmail}`);
-  res.json({
-  token,
-  expiringSoon: isExpiringSoon(student.expiresOn),
-  expiryDate: student.expiresOn
+
+  return res.json({
+    token,
+    expiringSoon: expiryInfo.expiringSoon,
+    expiryDate: expiryInfo.expiryDate
+  });
 });
 
 
-// === POST /validate ===
+
+// ===============================
+// VALIDATE ROUTE
+// ===============================
 app.post("/validate", (req, res) => {
   const { email, token } = req.body;
-  if (!email || !token) return res.json({ valid: false });
+
+  if (!email || !token) {
+    return res.json({ valid: false });
+  }
 
   const normalizedEmail = email.toLowerCase();
 
@@ -87,31 +113,42 @@ app.post("/validate", (req, res) => {
     s => s.email.toLowerCase() === normalizedEmail
   );
 
-  if (!student) return res.json({ valid: false });
+  if (!student) {
+    return res.json({ valid: false });
+  }
 
-  // 🔥 Expired check
   if (isExpired(student.expiresOn)) {
     return res.json({ valid: false, expired: true });
   }
 
-  const valid = activeSessions[normalizedEmail] === token;
-  const expiringSoon = isExpiringSoon(student.expiresOn);
+  const expiryInfo = getExpiringData(student.expiresOn);
 
-  res.json({
-  valid,
-  expiringSoon: isExpiringSoon(student.expiresOn),
-  expiryDate: student.expiresOn
+  const valid = activeSessions[normalizedEmail] === token;
+
+  return res.json({
+    valid,
+    expiringSoon: expiryInfo.expiringSoon,
+    expiryDate: expiryInfo.expiryDate
+  });
 });
 
 
-// Serve frontend
+
+// ===============================
+// FRONTEND
+// ===============================
 app.use(express.static(path.join(__dirname, "Public")));
 
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "Public", "index.html"));
 });
 
+
+// ===============================
+// SERVER START
+// ===============================
 const PORT = process.env.PORT || 3000;
+
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
