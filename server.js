@@ -15,13 +15,16 @@ let activeSessions = {};
 
 
 // 🔹 Function to check expiry
-function isExpired(expiresOn) {
+function isExpiringSoon(expiresOn) {
   const expiryDate = new Date(expiresOn);
   const today = new Date();
 
-  expiryDate.setHours(23, 59, 59, 999);
+  expiryDate.setHours(23,59,59,999);
 
-  return today > expiryDate;
+  const diffTime = expiryDate - today;
+  const diffDays = diffTime / (1000*60*60*24);
+
+  return diffDays <= 3 && diffDays >= 0;
 }
 
 
