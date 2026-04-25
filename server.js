@@ -47,6 +47,30 @@ app.post("/login", (req, res) => {
     return res.json({ expired: true });
   }
 
+  
+  
+  
+  
+  
+  
+  function isExpiringSoon(expiresOn) {
+  const expiryDate = new Date(expiresOn);
+  const today = new Date();
+
+  expiryDate.setHours(23, 59, 59, 999);
+
+  const diffTime = expiryDate - today;
+  const diffDays = diffTime / (1000 * 60 * 60 * 24);
+
+  return diffDays <= 1 && diffDays > 0;
+}
+  
+  
+  
+  
+  
+  
+  
   // Generate token
   const token = Math.random().toString(36).substring(2);
   activeSessions[normalizedEmail] = token;
