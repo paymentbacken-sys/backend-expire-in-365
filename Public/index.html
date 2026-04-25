@@ -409,8 +409,9 @@ setInterval(async () => {
     return;
   }
 
+  // 🔐 HANDLE OTHER DEVICE LOGIN
   if (!data.valid) {
-    showExpiryModal(formattedDate);
+    alert("⚠️ You have been logged out because this account was opened on another device.");
     localStorage.clear();
     location.reload();
   }
