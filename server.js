@@ -7,24 +7,24 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// 🔥 Load students with registration date
+// 🔥 Load students with expiry date
 let students = JSON.parse(fs.readFileSync("students.json"));
 
 // Store active sessions
 let activeSessions = {};
 
-const EXPIRY_DAYS = 365;
 
-// 🔹 Function to check expiry
-function isExpired(registeredOn) {
-  const regDate = new Date(registeredOn);
+// 🔹 Function to check expiry using expiresOn
+function isExpired(expiresOn) {
+  const expiryDate = new Date(expiresOn);
   const today = new Date();
 
-  const diffTime = today - regDate;
-  const diffDays = diffTime / (1000 * 60 * 60 * 24);
+  // student remains active till full expiry day ends
+  expiryDate.setHours(23, 59, 59, 999);
 
-  return diffDays > EXPIRY_DAYS;
+  return today > expiryDate;
 }
+
 
 // === POST /login ===
 app.post("/login", (req, res) => {
@@ -43,7 +43,7 @@ app.post("/login", (req, res) => {
   }
 
   // 🔥 CHECK EXPIRY
-  if (isExpired(student.registeredOn)) {
+  if (isExpired(student.expiresOn)) {
     return res.json({ expired: true });
   }
 
@@ -69,8 +69,8 @@ app.post("/validate", (req, res) => {
 
   if (!student) return res.json({ valid: false });
 
-  // 🔥 CHECK EXPIRY AGAIN (VERY IMPORTANT)
-  if (isExpired(student.registeredOn)) {
+  // 🔥 CHECK EXPIRY AGAIN
+  if (isExpired(student.expiresOn)) {
     return res.json({ valid: false, expired: true });
   }
 
@@ -78,6 +78,7 @@ app.post("/validate", (req, res) => {
 
   res.json({ valid });
 });
+
 
 // Serve frontend
 app.use(express.static(path.join(__dirname, "Public")));
