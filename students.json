@@ -1,6 +1,7 @@
 [
-  { "email": "g10.educational.platform@gmail.com", "registeredOn": "2026-04-25" },
-
+  { "email": "g10.educational.platform@gmail.com", "expiresOn": "2026-04-25" },
+{ "email": "g10.educational.platform2@gmail.com", "expiresOn": "2026-04-26" },
+  { "email": "g10.educational.platform3@gmail.com", "expiresOn": "2026-04-24" },
   { "email": "c10_sci_pt_G10EP5842@gmail.com", "expiresOn": "2026-04-25" },
   { "email": "c10_sci_pt_G10EP7391@gmail.com", "expiresOn": "2026-04-25" },
   { "email": "c10_sci_pt_G10EP1628@gmail.com", "expiresOn": "2026-04-25" },
