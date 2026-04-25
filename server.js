@@ -69,7 +69,10 @@ app.post("/login", (req, res) => {
   activeSessions[normalizedEmail] = token;
 
   console.log(`✅ Login: ${normalizedEmail}`);
-  res.json({ token, expiringSoon });
+  res.json({
+  token,
+  expiringSoon: isExpiringSoon(student.expiresOn),
+  expiryDate: student.expiresOn
 });
 
 
@@ -94,7 +97,10 @@ app.post("/validate", (req, res) => {
   const valid = activeSessions[normalizedEmail] === token;
   const expiringSoon = isExpiringSoon(student.expiresOn);
 
-  res.json({ valid, expiringSoon });
+  res.json({
+  valid,
+  expiringSoon: isExpiringSoon(student.expiresOn),
+  expiryDate: student.expiresOn
 });
 
 
