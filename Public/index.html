@@ -110,7 +110,86 @@
 	
 	
 	
-	
+.expiry-modal{
+  position:fixed;
+  top:0; left:0;
+  width:100%;
+  height:100%;
+  background:rgba(0,0,0,0.55);
+  display:none;
+  justify-content:center;
+  align-items:center;
+  z-index:9999;
+  animation:fadeIn 0.4s ease;
+}
+
+.expiry-box{
+  width:320px;
+  max-width:90%;
+  background:linear-gradient(160deg,#ffffff,#e0f2f1);
+  border-radius:16px;
+  box-shadow:0 10px 30px rgba(0,0,0,0.35);
+  text-align:center;
+  padding:25px 20px;
+  animation:popupScale 0.4s ease;
+}
+
+.expiry-icon{
+  font-size:42px;
+  margin-bottom:8px;
+}
+
+.expiry-box h2{
+  margin:8px 0;
+  color:#c62828;
+  font-size:22px;
+}
+
+.expiry-box p{
+  font-size:14px;
+  color:#333;
+  margin:14px 0 20px;
+  line-height:1.5;
+}
+
+.expiry-buttons{
+  display:flex;
+  justify-content:center;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+.renew-btn{
+  text-decoration:none;
+  background:linear-gradient(135deg,#ff9800,#f57c00);
+  color:white;
+  padding:10px 16px;
+  border-radius:8px;
+  font-size:13px;
+  font-weight:bold;
+  box-shadow:0 4px 8px rgba(0,0,0,0.25);
+}
+
+.later-btn{
+  background:linear-gradient(135deg,#009688,#00796B);
+  color:white;
+  border:none;
+  padding:10px 16px;
+  border-radius:8px;
+  cursor:pointer;
+  font-size:13px;
+  box-shadow:0 4px 8px rgba(0,0,0,0.25);
+}
+
+@keyframes fadeIn{
+ from{opacity:0;}
+ to{opacity:1;}
+}
+
+@keyframes popupScale{
+ from{transform:scale(0.7);}
+ to{transform:scale(1);}
+}	
 	
 	
 	
@@ -120,7 +199,18 @@
 	
   </style>
 </head>
-
+<div id="expiryModal" class="expiry-modal">
+  <div class="expiry-box">
+    <div class="expiry-icon">⚠️</div>
+    <h2>Access Expiry Warning</h2>
+    <p id="expiryText">Your access will expire soon.</p>
+    
+    <div class="expiry-buttons">
+      <a href="https://gten-educational-platform.github.io/Class-12/email.html" target="_blank" class="renew-btn">Renew Access</a>
+      <button onclick="closeExpiryModal()" class="later-btn">Later</button>
+    </div>
+  </div>
+</div>
 <body>
 
   <div id="loginContainer">
@@ -181,7 +271,7 @@ function showExpiryPopup(expiryDateString){
     d.getFullYear();
 
   setTimeout(() => {
-    alert(`⚠️ Your access will expire on ${formattedDate}. Please register again to renew access.`);
+    showExpiryModal(formattedDate);
   }, 800);
 }
 
@@ -320,11 +410,26 @@ setInterval(async () => {
   }
 
   if (!data.valid) {
-    alert("⚠️ You have been logged out because this account was opened on another device.");
+    showExpiryModal(formattedDate);
     localStorage.clear();
     location.reload();
   }
 }, 5000);
+
+
+
+
+function showExpiryModal(formattedDate){
+  document.getElementById("expiryText").innerHTML =
+    `Your access will expire on <b>${formattedDate}</b>.<br>Please renew now to avoid interruption.`;
+    
+  document.getElementById("expiryModal").style.display = "flex";
+}
+
+function closeExpiryModal(){
+  document.getElementById("expiryModal").style.display = "none";
+}
+
 </script>
 
 </body>
